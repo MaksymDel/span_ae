@@ -1,0 +1,61 @@
+{
+  "dataset_reader":{
+    "type":"span_ae",
+    "max_span_width": 3
+  },
+  "train_data_path": "tests/fixtures/parallel_copy.tsv",
+  "validation_data_path": "tests/fixtures/parallel_copy.tsv",
+  "model": {
+    "type": "span_ae",
+    "source_embedder": {
+      "tokens": {
+        "type": "embedding",
+        "embedding_dim": 25,
+        "trainable": true
+      }
+    },
+    "encoder": {
+      "type": "lstm",
+      "input_size": 25,
+      "hidden_size": 10,
+      "num_layers": 1,
+      "bidirectional": true
+    },
+    "span_extractor": {
+      "type": "bidirectional_endpoint",
+      "input_dim": 20,
+      "forward_combination": "y-x",
+      "backward_combination": "y-x",
+//        "num_width_embeddings": None,
+//        "span_width_embedding_dim":None,
+      "bucket_widths": false,
+      "use_sentinels": false
+    },
+    "span_scorer_feedforward": {
+      "input_dim": 20,
+      "num_layers": 2,
+      "hidden_dims": 33,
+      "activations": "relu",
+      "dropout": 0.2
+    },
+    "max_decoding_steps": 20,
+    "spans_per_word": 1,
+    "attention_function": {"type": "dot_product"},
+    "scheduled_sampling_ratio": 0.7
+  },
+  "iterator": {
+    "type": "bucket",
+    "padding_noise": 0.0,
+    "batch_size" : 80,
+    "sorting_keys": [["source_tokens", "num_tokens"]]
+  },
+  "trainer": {
+    "num_epochs": 2,
+    "patience": 10,
+    "cuda_device": -1,
+    "optimizer": {
+      "type": "adam",
+      "lr": 0.01
+    }
+  }
+}
