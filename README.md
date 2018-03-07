@@ -12,6 +12,6 @@ The model is structured as follows: <br>
 
 The code is written using [allennlp](https://github.com/allenai/allennlp) library. Follow the installation procedure from the allennlp website (available via pip) <br>
 To run this code simply execute: <br>
-`python -m allennlp.run train tests/fixtures/experiment.json --serialization-dir models/dry --include-package span_ae` <br>
+`python -m allennlp.run train configs/experiment_gpu.json --serialization-dir models/baseline --include-package span_ae` <br>
 
 

@@ -1,5 +1,5 @@
 import math
-from typing import Dict
+from typing import Dict, Tuple
 
 import numpy
 from allennlp.data.fields import ListField
@@ -204,6 +204,7 @@ class SpanAe(Model):
         step_logits = []
         step_probabilities = []
         step_predictions = []
+        attention_weights = []
         for timestep in range(num_decoding_steps):
             if self.training and all(torch.rand(1) >= self._scheduled_sampling_ratio):
                 input_choices = targets[:, timestep]
@@ -220,8 +221,9 @@ class SpanAe(Model):
             # Shape: (batch_size, num_spans_to_keep, span_embedding_dim + 1)
             top_span_embeddings_scores = torch.cat((top_span_embeddings, top_span_scores), 2)
             # Shape: (batch_size, decoder_input_dim)
-            decoder_input = self._prepare_decode_step_input(input_choices, decoder_hidden,
-                                                            top_span_embeddings_scores, top_span_mask)
+            decoder_input, attention_weights = self._prepare_decode_step_input(input_choices, decoder_hidden,
+                                                                               top_span_embeddings_scores,
+                                                                               top_span_mask)
             # Shape: both (batch_size, decoder_output_dim),
             decoder_hidden, decoder_context = self._decoder_cell(decoder_input,
                                                                  (decoder_hidden, decoder_context))
@@ -243,7 +245,8 @@ class SpanAe(Model):
         output_dict = {"logits": logits,
                        "class_probabilities": class_probabilities,
                        "predictions": all_predictions,
-                       "top_spans": top_spans}
+                       "top_spans": top_spans,
+                       "attention_weights": attention_weights}
         if target_tokens:
             target_mask = get_text_field_mask(target_tokens)
             loss = self._get_loss(logits, targets, target_mask)
@@ -254,7 +257,8 @@ class SpanAe(Model):
                                    input_indices: torch.LongTensor,
                                    decoder_hidden_state: torch.LongTensor = None,
                                    encoder_outputs: torch.LongTensor = None,
-                                   encoder_outputs_mask: torch.LongTensor = None) -> torch.LongTensor:
+                                   encoder_outputs_mask: torch.LongTensor = None) -> (torch.LongTensor,
+                                                                                      torch.FloatTensor):
         """
         Given the input indices for the current timestep of the decoder, and all the encoder
         outputs, compute the input at the current timestep.  Note: This method is agnostic to
@@ -290,7 +294,7 @@ class SpanAe(Model):
             # (batch_size, encoder_output_dim)
             attended_input = weighted_sum(encoder_outputs, input_weights)
             # (batch_size, encoder_output_dim + target_embedding_dim)
-            return torch.cat((attended_input, embedded_input), -1)
+            return torch.cat((attended_input, embedded_input), -1), input_weights
         else:
             return embedded_input
 
