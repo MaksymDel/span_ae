@@ -1,4 +1,7 @@
 {
+  "vocabulary": {
+    "max_vocab_size": 5
+  },
   "dataset_reader":{
     "type":"span_ae",
     "max_span_width": 3
