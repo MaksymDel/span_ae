@@ -26,7 +26,7 @@ class SpanAePredictor(Predictor):
         you can override this function to output them differently.
         """
         reconstructed_sentence = " ".join(outputs["predicted_tokens"])
-        a
+
         return reconstructed_sentence
 
     @overrides
