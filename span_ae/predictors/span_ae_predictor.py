@@ -17,7 +17,7 @@ class SpanAePredictor(Predictor):
         If your inputs are not in JSON-lines format (e.g. you have a CSV)
         you can override this function to parse them correctly.
         """
-        json_dict = {"sentence": line}
+        json_dict = {"src": line}
         return sanitize(json_dict)
 
     def dump_line(self, outputs: JsonDict) -> str:  # pylint: disable=no-self-use
@@ -25,13 +25,15 @@ class SpanAePredictor(Predictor):
         If you don't want your outputs in JSON-lines format
         you can override this function to output them differently.
         """
+        top_span_ids = outputs["top_spans"]
+
         reconstructed_sentence = " ".join(outputs["predicted_tokens"])
 
         return reconstructed_sentence
 
     @overrides
     def _json_to_instance(self, json_dict: JsonDict) -> Tuple[Instance, JsonDict]:
-        sentence = json_dict['sentence']
+        sentence = json_dict['src']
         instance = self._dataset_reader.text_to_instance(source_string=sentence)
 
         return instance, {}

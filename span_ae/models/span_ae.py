@@ -204,7 +204,7 @@ class SpanAe(Model):
         step_logits = []
         step_probabilities = []
         step_predictions = []
-        attention_weights = []
+        step_attention_weights = []
         for timestep in range(num_decoding_steps):
             if self.training and all(torch.rand(1) >= self._scheduled_sampling_ratio):
                 input_choices = targets[:, timestep]
@@ -224,6 +224,10 @@ class SpanAe(Model):
             decoder_input, attention_weights = self._prepare_decode_step_input(input_choices, decoder_hidden,
                                                                                top_span_embeddings_scores,
                                                                                top_span_mask)
+
+            if attention_weights is not None:
+                step_attention_weights.append(attention_weights)
+
             # Shape: both (batch_size, decoder_output_dim),
             decoder_hidden, decoder_context = self._decoder_cell(decoder_input,
                                                                  (decoder_hidden, decoder_context))
@@ -242,11 +246,19 @@ class SpanAe(Model):
         logits = torch.cat(step_logits, 1)
         class_probabilities = torch.cat(step_probabilities, 1)
         all_predictions = torch.cat(step_predictions, 1)
+
+        # step_attention_weights is a list containing tensors of shape (batch_size, num_encoder_outputs)
+        # This is (batch_size, num_decoding_steps, num_encoder_outputs)
+        if len(step_attention_weights) > 0:
+            attention_matrix = torch.cat(step_attention_weights, 0)
+
+        attention_matrix.unsqueeze_(0)
         output_dict = {"logits": logits,
                        "class_probabilities": class_probabilities,
                        "predictions": all_predictions,
                        "top_spans": top_spans,
-                       "attention_weights": attention_weights}
+                       "attention_matrix": attention_matrix,
+                       "top_spans_scores": top_span_scores}
         if target_tokens:
             target_mask = get_text_field_mask(target_tokens)
             loss = self._get_loss(logits, targets, target_mask)
