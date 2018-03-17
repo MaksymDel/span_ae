@@ -1,6 +1,7 @@
 # Span Based AutoEncoder for sentences
 This repository implements Span Based AutoEncoder for text data. <br>
-Note: WIP <br>
+
+
 The model is structured as follows: <br>
 <i> For each sentence we: </i> 
 1) tokenize and embed source words
